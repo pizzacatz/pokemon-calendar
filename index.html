@@ -2,14 +2,23 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Play! Pokémon Events</title>
 
-  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.14/index.global.min.css" rel="stylesheet">
+  <!-- Preconnect for faster CDN fetch -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+  <!-- FullCalendar CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.14/index.global.min.css">
+
   <style>
-    html, body { height:100%; margin:0; background:#0b1720; }
-    #calendar { max-width:1100px; margin:0 auto; padding:12px; }
-    /* dark blues/teals */
+    /* Page layout */
+    html, body { height: 100%; margin: 0; }
+    body { background:#0b1720; color:#d7e6ee; font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif; }
+    #calendar { max-width: 1100px; margin: 0 auto; padding: 12px; }
+    .note { max-width: 1100px; margin: 8px auto 0; opacity: .8; font-size: 13px; }
+
+    /* Dark theme: blues + teals */
     :root {
       --fc-page-bg-color:#0b1720;
       --fc-neutral-bg-color:#0f2430;
@@ -21,35 +30,74 @@
       --fc-button-hover-bg-color:#0c4250;
       --fc-button-hover-border-color:#0c4250;
       --fc-today-bg-color:rgba(0, 150, 136, .15);
-      --fc-event-bg-color:#009688;
+      --fc-event-bg-color:#009688; /* default if event has no color */
       --fc-event-border-color:#009688;
+      --fc-list-event-hover-bg-color:#102a34;
     }
-  </style>
 
-  <script defer src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.14/index.global.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/@fullcalendar/icalendar@6.1.14/index.global.min.js"></script>
+    /* Full-viewport height */
+    #calendar { min-height: 100vh; box-sizing: border-box; }
+
+    /* Optional: tidy event text */
+    .fc .fc-event-title { white-space: normal; }
+  </style>
 </head>
 <body>
+
   <div id="calendar"></div>
+  <noscript class="note">Enable JavaScript to view the calendar.</noscript>
+
+  <!-- 1) FullCalendar core -->
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.14/index.global.min.js"></script>
+  <!-- 2) ical.js (defines global ICAL used by the iCalendar plugin) -->
+  <script src="https://cdn.jsdelivr.net/npm/ical.js@1.4.0/build/ical.min.js"></script>
+  <!-- 3) FullCalendar iCalendar plugin -->
+  <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/icalendar@6.1.14/index.global.min.js"></script>
+
+  <!-- Init -->
   <script>
+    // ======= CONFIGURE THIS =======
+    const WORKER_BASE = 'https://old-sun-220e.yidojang.workers.dev'; // replace <your>
+
+    // Your two ICS sources
+    const ICS_URLS = [
+      'https://script.google.com/macros/s/AKfycbyTk7odWo1Zpy9MI0a6ELMTkg_zYTiwMtF50pPUDmk0SLDoNMQvgjU_0zTN2APATndIAQ/exec',
+      'https://pokedata.ovh/events/api/_tcg/cups/challenges/_go/cups/_vg/challenges/_country/US/_state/GA/Georgia/_start/2025-08-20/ics'
+    ];
+
+    // Map ICS -> proxied URL with encoding
+    function proxied(icsUrl) {
+      const u = WORKER_BASE.replace(/\/?$/, '/') + '?url=' + encodeURIComponent(icsUrl);
+      return u;
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
-      const cal = new FullCalendar.Calendar(document.getElementById('calendar'), {
+      const calendarEl = document.getElementById('calendar');
+
+      // Build eventSources with per-feed colors
+      const eventSources = [
+        { url: proxied(ICS_URLS[0]), format: 'ics', color: '#009688' }, // teal
+        { url: proxied(ICS_URLS[1]), format: 'ics', color: '#1976d2' }  // blue
+      ];
+
+      const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         height: 'auto',
         contentHeight: 'auto',
         expandRows: true,
-        headerToolbar: { left:'prev,next today', center:'title', right:'dayGridMonth,timeGridWeek,listWeek' },
-        eventSources: [
-          // Replace with your PUBLIC ICS URLs or your Apps Script ICS proxies
-          { url:'https://pokedata.ovh/events/api/_tcg/cups/challenges/_go/cups/_vg/challenges/_country/US/_state/GA/Georgia/_start/2025-08-20/ics', format:'ics', color:'#009688' }, // teal
-          { url:'https://script.google.com/macros/s/AKfycbyTk7odWo1Zpy9MI0a6ELMTkg_zYTiwMtF50pPUDmk0SLDoNMQvgjU_0zTN2APATndIAQ/exec', format:'ics', color:'#1976d2' }, // blue
-          { url:'https://old-sun-220e.yidojang.workers.dev//?url=https%3A%2F%2Fscript.google.com%2Fmacros%2Fs%2FAKfycbyTk7odWo1Zpy9MI0a6ELMTkg_zYTiwMtF50pPUDmk0SLDoNMQvgjU_0zTN2APATndIAQ%2Fexec', format:'ics', color:'#8e24aa' }  // purple
-        ]
+        timeZone: 'America/New_York',
+        headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth' },
+        eventSources,
+        eventSourceSuccess(src, events) {
+          console.log('Loaded', src.url, 'events:', events.length);
+        },
+        eventSourceFailure(err) {
+          console.error('ICS load failed', err);
+        }
       });
-      cal.render();
+
+      calendar.render();
     });
   </script>
 </body>
 </html>
-
-
