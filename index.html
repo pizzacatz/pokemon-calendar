@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Play! Pokémon Events</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.14/index.global.min.css" rel="stylesheet">
+  <style>
+    html, body { height:100%; margin:0; background:#0b1720; }
+    #calendar { max-width:1100px; margin:0 auto; padding:12px; }
+    /* dark blues/teals */
+    :root {
+      --fc-page-bg-color:#0b1720;
+      --fc-neutral-bg-color:#0f2430;
+      --fc-border-color:#1f3642;
+      --fc-text-color:#d7e6ee;
+      --fc-button-text-color:#d7e6ee;
+      --fc-button-bg-color:#0e5160;
+      --fc-button-border-color:#0e5160;
+      --fc-button-hover-bg-color:#0c4250;
+      --fc-button-hover-border-color:#0c4250;
+      --fc-today-bg-color:rgba(0, 150, 136, .15);
+      --fc-event-bg-color:#009688;
+      --fc-event-border-color:#009688;
+    }
+  </style>
+
+  <script defer src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.14/index.global.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@fullcalendar/icalendar@6.1.14/index.global.min.js"></script>
+</head>
+<body>
+  <div id="calendar"></div>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const cal = new FullCalendar.Calendar(document.getElementById('calendar'), {
+        initialView: 'dayGridMonth',
+        height: 'auto',
+        contentHeight: 'auto',
+        expandRows: true,
+        headerToolbar: { left:'prev,next today', center:'title', right:'dayGridMonth,timeGridWeek,listWeek' },
+        eventSources: [
+          // Replace with your PUBLIC ICS URLs or your Apps Script ICS proxies
+          { url:'https://pokedata.ovh/events/api/_tcg/cups/challenges/_go/cups/_vg/challenges/_country/US/_state/GA/Georgia/_start/2025-08-20/ics', format:'ics', color:'#009688' }, // teal
+          { url:'https://script.google.com/macros/s/AKfycbyTk7odWo1Zpy9MI0a6ELMTkg_zYTiwMtF50pPUDmk0SLDoNMQvgjU_0zTN2APATndIAQ/exec', format:'ics', color:'#1976d2' }, // blue
+          { url:'https://example.com/c.ics', format:'ics', color:'#8e24aa' }  // purple
+        ]
+      });
+      cal.render();
+    });
+  </script>
+</body>
+</html>
